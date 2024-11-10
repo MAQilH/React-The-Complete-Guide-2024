@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import Places from './components/Places.jsx';
 import { AVAILABLE_PLACES } from './data.js';
@@ -13,8 +13,8 @@ const storedPlaces = storedIds.map((id) =>
 );
 
 function App() {
-  const modal = useRef();
   const selectedPlace = useRef();
+  const [isOpenModalDialog, setIsOpenModalDialog] = useState(false)
   const [availablePlaces, setAvailablePlaces] = useState([]);
   const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
 
@@ -25,18 +25,17 @@ function App() {
         position.coords.latitude,
         position.coords.longitude
       );
-
       setAvailablePlaces(sortedPlaces);
     });
   }, []);
 
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setIsOpenModalDialog(true)
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal.current.close();
+    setIsOpenModalDialog(false)
   }
 
   function handleSelectPlace(id) {
@@ -57,22 +56,22 @@ function App() {
     }
   }
 
-  function handleRemovePlace() {
+  const handleRemovePlace = useCallback(function handleRemovePlace() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
     );
-    modal.current.close();
+    setIsOpenModalDialog(false)
 
     const storedIds = JSON.parse(localStorage.getItem('selectedPlaces')) || [];
     localStorage.setItem(
       'selectedPlaces',
       JSON.stringify(storedIds.filter((id) => id !== selectedPlace.current))
     );
-  }
+  }, [])
 
   return (
     <>
-      <Modal ref={modal}>
+      <Modal open={isOpenModalDialog}>
         <DeleteConfirmation
           onCancel={handleStopRemovePlace}
           onConfirm={handleRemovePlace}
